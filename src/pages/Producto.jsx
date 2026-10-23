@@ -1,19 +1,17 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useProductos } from "../context/ProductosContext";
+import { useCarrito } from "../context/CarritoContext";
 
 export default function Producto() {
-  const { id } = useParams(); // Obtiene el id de la URL (/producto/taladro)
+  const { id } = useParams();
   const { productos } = useProductos();
+  const { agregarAlCarrito } = useCarrito();
   
-  // Buscar el producto por id
   const producto = productos.find((p) => p.id === id);
-
-  // Estados para manejar la cantidad y el total (interactividad con useState)
   const [cantidad, setCantidad] = useState("");
   const [total, setTotal] = useState(0);
 
-  // Si el producto no existe, mostrar mensaje
   if (!producto) {
     return (
       <section className="seccion">
@@ -23,12 +21,10 @@ export default function Producto() {
     );
   }
 
-  // Función para formatear precio
   const formatarPrecio = (precio) => {
     return "$" + precio.toLocaleString("es-CL");
   };
 
-  // Lógica original de calcularTotal() adaptada a React
   const calcularTotal = () => {
     if (cantidad === "") {
       alert("Debe ingresar una cantidad");
@@ -46,41 +42,50 @@ export default function Producto() {
     setTotal(totalCalculado);
   };
 
+  const handleAgregarAlCarrito = () => {
+    if (cantidad === "" || Number(cantidad) < 1) {
+      alert("Ingrese una cantidad válida");
+      return;
+    }
+    if (Number(cantidad) > producto.stock) {
+      alert("Stock insuficiente");
+      return;
+    }
+    
+    agregarAlCarrito(producto, Number(cantidad));
+    alert(`✅ ${producto.nombre} agregado al carrito`);
+    setCantidad("");
+    setTotal(0);
+  };
+
   return (
     <section className="detalle-producto">
       <div className="imagen-producto">
         <img
-          id="imagenProducto"
           src={producto.imagen}
           alt={producto.nombre}
-          onError={(e) => (e.target.src = "img/default.jpg")}
+          onError={(e) => (e.target.src = "/img/default.jpg")}
         />
       </div>
 
       <div className="info-producto">
-        <h2 id="nombreProducto">{producto.nombre}</h2>
-        <p className="precio-producto" id="precioProducto">
-          {formatarPrecio(producto.precio)}
-        </p>
-        <p id="descripcionProducto">{producto.descripcion}</p>
+        <h2>{producto.nombre}</h2>
+        <p className="precio-producto">{formatarPrecio(producto.precio)}</p>
+        <p>{producto.descripcion}</p>
 
         <h3>Características</h3>
-        <ul id="caracteristicasProducto">
+        <ul>
           {producto.caracteristicas.map((caracteristica, index) => (
             <li key={index}>{caracteristica}</li>
           ))}
         </ul>
 
-        <p>
-          Stock disponible:{" "}
-          <span id="stockProducto">{producto.stock} unidades</span>
-        </p>
+        <p>Stock disponible: <span>{producto.stock} unidades</span></p>
 
         <div className="cantidad-producto">
           <label>Cantidad:</label>
           <input
             type="number"
-            id="cantidad"
             value={cantidad}
             onChange={(e) => setCantidad(e.target.value)}
             min="1"
@@ -92,11 +97,23 @@ export default function Producto() {
           Calcular Total
         </button>
 
-        <p id="totalProducto">
-          {total > 0 ? `Total: ${formatarPrecio(total)}` : ""}
-        </p>
+        {total > 0 && (
+          <p id="totalProducto">Total: {formatarPrecio(total)}</p>
+        )}
 
-        <Link to="/productos" className="boton">
+        <button 
+          className="boton" 
+          onClick={handleAgregarAlCarrito}
+          style={{ marginTop: "15px", backgroundColor: "#5E8C87" }}
+        >
+          Agregar al Carrito
+        </button>
+
+        <Link 
+          to="/productos" 
+          className="boton" 
+          style={{ display: "block", marginTop: "15px", textAlign: "center" }}
+        >
           Volver al catálogo
         </Link>
       </div>
